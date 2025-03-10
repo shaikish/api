@@ -4,7 +4,7 @@ import API_BASE_URL from "../config";
 import { AuthContext } from "../context/AuthContext";
 
 function Login() {
-  const [username, setUsername] = useState(""); // Changed from email to username
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ function Login() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }), // Changed from email to username
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
@@ -36,20 +36,8 @@ function Login() {
     <div>
       <h2>Login</h2>
       <form onSubmit={handleLogin}>
-        <input 
-          type="text" // Changed from email to text
-          placeholder="Username" 
-          value={username} 
-          onChange={(e) => setUsername(e.target.value)} 
-          required 
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-          required 
-        />
+        <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button type="submit">Login</button>
       </form>
     </div>

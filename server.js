@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const authMiddleware = require("./middleware/authMiddleware");
 
 const app = express();
 app.use(express.json());
@@ -18,20 +17,24 @@ mongoose
 
 // User Model
 const User = mongoose.model("User", new mongoose.Schema({
-  username: String,
-  email: String,
-  password: String,
+  username: { type: String, unique: true, required: true },
+  email: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
 }));
 
-// Default route to check if API is running
-app.get("/", (req, res) => {
-  res.send("API is working!");
-});
+// Middleware for authentication
+const authMiddleware = (req, res, next) => {
+  const token = req.header("Authorization");
+  if (!token) return res.status(401).json({ message: "Access Denied" });
 
-// Test route
-app.get("/api/test", (req, res) => {
-  res.json({ message: "Test route is working!" });
-});
+  try {
+    const verified = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (err) {
+    res.status(400).json({ message: "Invalid Token" });
+  }
+};
 
 // Register User
 app.post("/api/auth/register", async (req, res) => {
@@ -43,16 +46,14 @@ app.post("/api/auth/register", async (req, res) => {
     await user.save();
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error registering user" });
+    res.status(500).json({ message: "Error registering user", error });
   }
 });
 
-// Login User
-// Login User with Username
+// Login User (Now using username instead of email)
 app.post("/api/auth/login", async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
-
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ message: "Invalid credentials" });
@@ -68,6 +69,11 @@ app.get("/api/user/profile", authMiddleware, async (req, res) => {
   if (!user) return res.status(404).json({ message: "User not found" });
 
   res.json({ message: `Welcome, ${user.username}!`, user });
+});
+
+// Test Route
+app.get("/api/test", (req, res) => {
+  res.json({ message: "API is working!" });
 });
 
 // Start Server
