@@ -5,6 +5,9 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
+// Import User Model (IMPORTANT: No need to define it again)
+const User = require("./models/User");
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -14,13 +17,6 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error(err));
-
-// User Model
-const User = mongoose.model("User", new mongoose.Schema({
-  username: { type: String, unique: true, required: true },
-  email: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
-}));
 
 // Middleware for authentication
 const authMiddleware = (req, res, next) => {
@@ -39,10 +35,15 @@ const authMiddleware = (req, res, next) => {
 // Register User
 app.post("/api/auth/register", async (req, res) => {
   const { username, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = new User({ username, email, password: hashedPassword });
-
   try {
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already taken" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ username, email, password: hashedPassword });
+
     await user.save();
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
@@ -50,25 +51,32 @@ app.post("/api/auth/register", async (req, res) => {
   }
 });
 
-// Login User (Now using username instead of email)
+// Login User
 app.post("/api/auth/login", async (req, res) => {
   const { username, password } = req.body;
-  const user = await User.findOne({ username });
+  try {
+    const user = await User.findOne({ username });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(401).json({ message: "Invalid credentials" });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ message: "Login error", error });
   }
-
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-  res.json({ token });
 });
 
 // Protected User Profile Route
 app.get("/api/user/profile", authMiddleware, async (req, res) => {
-  const user = await User.findById(req.user.userId).select("-password");
-  if (!user) return res.status(404).json({ message: "User not found" });
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-  res.json({ message: `Welcome, ${user.username}!`, user });
+    res.json({ message: `Welcome, ${user.username}!`, user });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching profile", error });
+  }
 });
 
 // Test Route
