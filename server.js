@@ -5,7 +5,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-// Import User Model (IMPORTANT: No need to define it again)
+// Import User Model
 const User = require("./models/User");
 
 const app = express();
@@ -34,7 +34,7 @@ const authMiddleware = (req, res, next) => {
 
 // Register User
 app.post("/api/auth/register", async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, password } = req.body;
   try {
     const existingUser = await User.findOne({ username });
     if (existingUser) {
@@ -42,7 +42,7 @@ app.post("/api/auth/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password: hashedPassword });
+    const user = new User({ username, password: hashedPassword });
 
     await user.save();
     res.status(201).json({ message: "User registered successfully" });
