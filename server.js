@@ -23,6 +23,16 @@ const User = mongoose.model("User", new mongoose.Schema({
   password: String,
 }));
 
+// Default route to check if API is running
+app.get("/", (req, res) => {
+  res.send("API is working!");
+});
+
+// Test route
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Test route is working!" });
+});
+
 // Register User
 app.post("/api/auth/register", async (req, res) => {
   const { username, email, password } = req.body;
