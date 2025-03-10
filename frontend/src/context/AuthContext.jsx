@@ -1,49 +1,28 @@
 import { createContext, useState, useEffect } from "react";
-import axios from "axios";
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
 
-  useEffect(() => {
-    if (token) {
-      axios
-        .get("http://localhost:5000/api/user/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => setUser(res.data))
-        .catch(() => {
-          setUser(null);
-          setToken("");
-          localStorage.removeItem("token");
-        });
-    }
-  }, [token]);
-
-  const login = async (username, password) => {
-    try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", { username, password });
-      setToken(res.data.token);
-      localStorage.setItem("token", res.data.token);
-      return true;
-    } catch (error) {
-      return false;
-    }
+  const login = (newToken) => {
+    setToken(newToken);
+    localStorage.setItem("token", newToken);
   };
 
   const logout = () => {
-    setUser(null);
-    setToken("");
+    setToken(null);
     localStorage.removeItem("token");
   };
 
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) setToken(storedToken);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export default AuthContext;

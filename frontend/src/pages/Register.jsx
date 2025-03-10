@@ -1,41 +1,33 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+    const response = await fetch("https://api-7s91.onrender.com/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password }),
+    });
 
-      const data = await res.json();
-      if (res.ok) {
-        alert("User registered successfully!");
-        navigate("/login");
-      } else {
-        alert(data.message || "Registration failed");
-      }
-    } catch (error) {
-      console.error("Error:", error);
+    const data = await response.json();
+    if (response.ok) {
+      alert("Registration successful! You can now log in.");
+    } else {
+      alert(data.message);
     }
   };
 
   return (
-    <div>
-      <h2>Register</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <button type="submit">Register</button>
-      </form>
-    </div>
+    <form onSubmit={handleRegister}>
+      <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+      <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      <button type="submit">Register</button>
+    </form>
   );
 };
 
