@@ -21,7 +21,7 @@ const Dashboard = () => {
         if (!res.ok) throw new Error("Unauthorized");
 
         const data = await res.json();
-        setUserData(data);
+        setUserData(data.user); // Ensure we're setting user data correctly
       } catch (error) {
         console.error(error);
         localStorage.removeItem("token");
@@ -37,8 +37,7 @@ const Dashboard = () => {
       <h2>Dashboard</h2>
       {userData ? (
         <div>
-          <p>Welcome, {userData.user.username}!</p>
-          <p>Email: {userData.user.email}</p>
+          <p>Welcome, {userData.username}!</p> {/* Changed to username */}
         </div>
       ) : (
         <p>Loading...</p>
